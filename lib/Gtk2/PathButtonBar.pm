@@ -10,11 +10,11 @@ Gtk2::PathButtonBar - Creates a bar for path manipulation.
 
 =head1 VERSION
 
-Version 0.0.0
+Version 0.1.0
 
 =cut
 
-our $VERSION = '0.0.0';
+our $VERSION = '0.1.0';
 
 
 =head1 SYNOPSIS
@@ -41,11 +41,11 @@ Any time the path is updated, '$self->{exec}' is ran through eval.
     
     Gtk2->init;
     
-    my $window = Gtk2::Window->new({exec=>'print "path=".${$myself}->{path}."\na=".${$myself}->{vars}{a}."\n:;',
-                                    vars=>{a=>1};
-                                    });
+    my $window = Gtk2::Window->new();
     
-    my $pbb=Gtk2::PathButtonBar->new();
+    my $pbb=Gtk2::PathButtonBar->new({exec=>'print "path=".${$myself}->{path}."\na=".${$myself}->{vars}{a}."\n";',
+                                    vars=>{a=>1},
+                                    });
     
     print $pbb->{vbox}."\n";
     
@@ -104,7 +104,7 @@ sub new {
 		%args= %{$_[1]};
 	}
 
-	my $self={error=>undef, set=>undef};
+	my $self={error=>undef, set=>undef, errorString=>''};
 	bless $self;
 
 	if (!defined($args{exec})) {
@@ -117,7 +117,7 @@ sub new {
 	}
 	$self->{vars}=$args{vars};
 
-#I not added in the if statement for this yet and in retrospect I like the
+#I've not added in the if statement for this yet and in retrospect I like the
 #idea of leaving it out.
 #	#determines if root will be shown or not
 #	if (!defined($args{showRoot})) {
@@ -192,7 +192,7 @@ sub new {
 	return $self;
 }
 
-=head1 go
+=head2 go
 
 This is called when a new path is set by pressing the go button.
 
@@ -211,7 +211,7 @@ sub go{
 	$self->makeButtons;
 }
 
-=head1 goRoot
+=head2 goRoot
 
 This is called when a new path is set by pressing the root button.
 
@@ -234,7 +234,7 @@ sub goRoot{
 	
 }
 
-=head1 makeButtons
+=head2 makeButtons
 
 This is a internal function that rebuilds the button bar.
 
@@ -340,6 +340,73 @@ sub makeButtons{
 	}
 
 }
+
+=head2 setPath
+
+This changes the current path.
+
+One arguement is accepted and that is the path.
+
+    $pbb->setPath($somepath);
+    if($self->{error}){
+        print "Error!\n";
+    }
+
+=cut
+
+sub setPath{
+	my $self=$_[0];
+	my $path=$_[1];
+
+	$self->errorblank;
+
+	if (!defined($path)) {
+		$self->{error}=1;
+		$self->{errorString}='No path specified';
+		warn('Gtk2-PathButtonBar setPath:1: '.$self->{errorString});
+		return undef;
+	}
+
+	#this removes the delimiter if it starts with it
+	$path=~s/^$self->{delimiter}//;
+	$path=~s/$self->{delimiter}$//;
+
+	#set the path
+	$self->{entry}->set_text($path);
+	$self->{path}=$path;
+
+	#now that we have changed it, update the buttons
+	$self->makeButtons;
+
+	return 1;
+}
+
+=head2 errorblank
+
+This blanks the error storage and is only meant for internal usage.
+
+It does the following.
+
+    $self->{error}=undef;
+    $self->{errorString}="";
+
+=cut
+
+#blanks the error flags
+sub errorblank{
+        my $self=$_[0];
+
+        $self->{error}=undef;
+        $self->{errorString}="";
+
+        return 1;
+}
+
+=head1 ERROR CODES
+
+=head2 1
+
+No path specified.
 
 =head1 AUTHOR
 
