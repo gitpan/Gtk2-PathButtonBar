@@ -10,11 +10,11 @@ Gtk2::PathButtonBar - Creates a bar for path manipulation.
 
 =head1 VERSION
 
-Version 0.1.0
+Version 0.1.1
 
 =cut
 
-our $VERSION = '0.1.0';
+our $VERSION = '0.1.1';
 
 
 =head1 SYNOPSIS
@@ -206,7 +206,12 @@ sub go{
                       #If we did not have it here, stuff for in the buttons would go wonky and vice versa.
 	$self->{path}=$self->{entry}->get_text;
 
-	eval($self->{exec}) or warn("Gtk2::PathButtonBar goRoot: eval failed on for... \n".$self->{exec}."\n");
+	$self->{path}=~s/$self->{delimiter}+/$self->{delimiter}/g;
+	$self->{path}=~s/^$self->{delimiter}+//;
+	$self->{path}=~s/$self->{delimiter}+$//;
+	$self->{entry}->set_text($self->{path});
+
+	eval($self->{exec}) or warn("Gtk2::PathButtonBar go: eval failed on for... \n".$self->{exec}."\n");
 
 	$self->makeButtons;
 }
@@ -247,49 +252,15 @@ If you wish to call this from '$self->{exec}', do it as below.
 sub makeButtons{
 	my $self=$_[0];
 
-	#used to check if the path was fixed
-	my $pathfixed=undef;
-
-	#removes any double delimiters
-	my $regexptest=$self->{delimiter};
-	$regexptest=quotemeta($regexptest);
-	if ($self->{path} =~ /$regexptest+/) {
-		$self->{path}=~s/$regexptest+/$self->{delimiter}/g;
-		$pathfixed=1;		
-	}
-
-	#make sure it does not begin with a delimiter
-	if ($self->{path} =~ /^$regexptest/) {
-		$self->{path}=~s/^$regexptest//;
-		$pathfixed=1;
-	}
-
-#disabled for now, but needs to be made optional in the future
-#	#make sure it does not end with a delimiter
-#	if ($self->{path} =~ /$regexptest$/) {
-#		$self->{path}=~s/$regexptest$//;
-#		$pathfixed=1;
-#	}
-
-	if (defined($pathfixed)) {
-		$self->{entry}->set_text($self->{path});
-	}
-
 	my @split=split($self->{delimiter}, $self->{path});
-
 
 	my $splitInt=0;
 
-	my $path=undef;
+	my $path='';
 
 	#adds or changes buttons
 	while ($splitInt <= $#split) {
-		#builds the path
-		if (!defined($path)) {
-			$path=$split[$splitInt].$self->{delimiter};
-		}else {
-			$path=$path.$split[$splitInt];
-		}
+		$path=$path.$split[$splitInt].$self->{delimiter};
 
 		#the action works like this...
 		#1: Create $myself for allowing a way of accessing self both here and in 'goRoot' and 'go'.
