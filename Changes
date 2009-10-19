@@ -1,5 +1,9 @@
 Revision history for Gtk2-PathButtonBar
 
+0.1.2	2009-10-13/14:00
+		-More button cleanup.
+		-No longer executes any thing more than once.
+
 0.1.1	2009-10-13/13:00
 		-Correct it not setting the path properly.
 

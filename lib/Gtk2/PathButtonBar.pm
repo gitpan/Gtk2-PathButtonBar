@@ -10,11 +10,11 @@ Gtk2::PathButtonBar - Creates a bar for path manipulation.
 
 =head1 VERSION
 
-Version 0.1.1
+Version 0.1.2
 
 =cut
 
-our $VERSION = '0.1.1';
+our $VERSION = '0.1.2';
 
 
 =head1 SYNOPSIS
@@ -104,7 +104,7 @@ sub new {
 		%args= %{$_[1]};
 	}
 
-	my $self={error=>undef, set=>undef, errorString=>''};
+	my $self={error=>undef, set=>undef, errorString=>'', buttons=>{}};
 	bless $self;
 
 	if (!defined($args{exec})) {
@@ -270,42 +270,44 @@ sub makeButtons{
 		#5: eval what ever is in '$self->{exec}'.
 
 		#add a new button if it does not exist
-		if (defined($self->{$splitInt})) {
-			#as the button already exists, we just need to change the label and action
-			$self->{$splitInt."Label"}->set_text($split[$splitInt].$self->{delimiter});
-			$self->{$splitInt}->signal_connect("clicked" => sub{my $myself=\$_[1]->{self};
-																$_[1]->{self}->{path}=$_[1]->{path};
-																$_[1]->{self}->{entry}->set_text($_[1]->{path});
-																$_[1]->{self}->makeButtons;
-																eval($_[1]->{self}->{exec}) or warn("Gtk2::PathButtonBar goRoot: eval failed on for... \n".$_[1]->{self}->{exec}."\n");
-													 }, {self=>$self, path=>$path});
-		}else {
-			$self->{$splitInt}=Gtk2::Button->new();
-			$self->{$splitInt."Label"}=Gtk2::Label->new($split[$splitInt].$self->{delimiter});
-			$self->{$splitInt}->add($self->{$splitInt."Label"});
-			$self->{$splitInt."Label"}->show;
-			$self->{$splitInt}->show;
-			#
-			$self->{$splitInt}->signal_connect("clicked" => sub{my $myself=\$_[1]->{self};
-																$_[1]->{self}->{path}=$_[1]->{path};
-																$_[1]->{self}->{entry}->set_text($_[1]->{path});
-																$_[1]->{self}->makeButtons;
-																eval($_[1]->{self}->{exec}) or warn("Gtk2::PathButtonBar goRoot: eval failed on for... \n".$_[1]->{self}->{exec}."\n");
-													 }, {self=>$self, path=>$path});
-			$self->{bhbox}->pack_start($self->{$splitInt}, 0, 0, 1);
+		if (defined($self->{buttons}{$splitInt})) {
+			$self->{bhbox}->remove($self->{buttons}{$splitInt});
+			$self->{buttons}{$splitInt}->destroy;
+			$self->{buttons}{$splitInt."Label"}->destroy;
+			delete($self->{buttons}{$splitInt});
+			delete($self->{buttons}{$splitInt."Label"});
 		}
+
+		$self->{buttons}{$splitInt}=Gtk2::Button->new();
+		$self->{buttons}{$splitInt."Label"}=Gtk2::Label->new($split[$splitInt].$self->{delimiter});
+		$self->{buttons}{$splitInt}->add($self->{buttons}{$splitInt."Label"});
+		$self->{buttons}{$splitInt."Label"}->show;
+		$self->{buttons}{$splitInt}->show;
+		$self->{buttons}{$splitInt}->signal_connect("clicked" => sub{
+														my $myself=\$_[1]->{self};
+														$_[1]->{self}->{path}=$_[1]->{path};
+														$_[1]->{self}->{entry}->set_text($_[1]->{path});
+														$_[1]->{self}->makeButtons;
+														eval($_[1]->{self}->{exec}) or warn("Gtk2::PathButtonBar goRoot: eval failed on for... \n".$_[1]->{self}->{exec}."\n");
+													},
+													{
+													 self=>$self,
+													 path=>$path
+													 }
+													);
+		$self->{bhbox}->pack_start($self->{buttons}{$splitInt}, 0, 0, 1);
 
 		$splitInt++;
 	}
 
 	#removes unneeded buttons
 	#any button past this point in $splitInt is a old one that is no longer in the page
-	while (defined($self->{$splitInt})) {
-		$self->{bhbox}->remove($self->{$splitInt});
-		$self->{$splitInt}->destroy;
-		$self->{$splitInt."Label"}->destroy;
-		delete($self->{$splitInt});
-		delete($self->{$splitInt."Label"});
+	while (defined($self->{buttons}{$splitInt})) {
+		$self->{bhbox}->remove($self->{buttons}{$splitInt});
+		$self->{buttons}{$splitInt}->destroy;
+		$self->{buttons}{$splitInt."Label"}->destroy;
+		delete($self->{buttons}{$splitInt});
+		delete($self->{buttons}{$splitInt."Label"});
 
 		$splitInt++;
 	}
